@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="gbk" ?>
+<!-- 改javac和hadoop的路径-->
+<project name="QuerySrv" default="archieve">
+
+	<target name="init" depends="clean">
+		<mkdir dir="classes" />
+		<echo>=======临时文件夹已建立完成======</echo>
+	</target>
+
+	<path id="jar.path">
+		<fileset dir="lib">
+			<include name="*.jar" />
+		</fileset>
+		<fileset dir="D:\source\清帐source\java\QzdBaseTX\lib\hadoop_xh">
+			<include name="*.jar" />
+		</fileset>
+	</path>
+
+	<target name="compile" depends="init">
+		<javac encoding="gbk" fork="true" destdir="classes" classpathref="jar.path" debug="on" deprecation="on" optimize="off" target="1.7" memoryinitialsize="128m" executable="D:\Program files\MyEclipse\binary\com.sun.java.jdk7.win32.x86_64_1.7.0.u45\bin\javac" memorymaximumsize="1024m">
+			<src path="src" />
+		</javac>
+		<echo>=========编译完成===========</echo>
+	</target>
+
+	<path id="path.svnant">
+		<!-- 此处必须一个个导入  -->
+		<pathelement location="../QzdBaseTX/lib/svn_info/svnkit-1.8.8.jar" />
+		<pathelement location="../QzdBaseTX/lib/svn_info/svnkit.jar" />
+		<pathelement location="../QzdBaseTX/lib/svn_info/ganymed.jar" />
+		<pathelement location="../QzdBaseTX/lib/svn_info/jna.jar" />
+		<pathelement location="../QzdBaseTX/lib/svn_info/svnant.jar" />
+		<pathelement location="../QzdBaseTX/lib/svn_info/svnClientAdapter.jar" />
+		<pathelement location="../QzdBaseTX/lib/svn_info/svnjavahl.jar" />
+		<pathelement location="../QzdBaseTX/lib/svn_info/antlr-runtime-3.5.2.jar" />
+		<pathelement location="../QzdBaseTX/lib/svn_info/sequence-library-1.0.3.jar" />
+		<pathelement location="../QzdBaseTX/lib/svn_info/sqljet-1.1.10.jar" />
+	</path>
+	<typedef resource="org/tigris/subversion/svnant/svnantlib.xml" classpathref="path.svnant" />
+	<svnSetting id="svn.settings" javahl="false" svnkit="true" />
+
+	<target name="svn_version">
+		<svn refid="svn.settings">
+			<wcVersion path="." />
+		</svn>
+		<property name="svn_version" value="${revision.max}" />
+		<echo message="svn_version: ${svn_version}" />
+	</target>
+
+	<property name="PL" value="../QzdBaseTX/lib/svn_info/version.pl" />
+	<condition property="isUnix">
+		<os family="unix" />
+	</condition>
+
+	<condition property="hasPL">
+		<available file="${PL}" type="file" />
+	</condition>
+
+	<target name="execPerl"  if="hasPL">
+		<echo>execPerl</echo>
+		<mkdir dir="classes/META-INF" />
+		<exec executable="perl" output="classes/META-INF/SVN_DETAIL.txt">
+			<arg line="${PL}" />
+		</exec>
+		<echo>execPerl end</echo>
+	</target>
+
+	<target name="svn_version_detail" if="isUnix">
+		<echo>svn_version_detail</echo>
+        <antcall target="execPerl"></antcall>  
+	</target>
+
+	<target name="archieve" depends="compile, svn_version, svn_version_detail">
+		<!-- 瘦包
+		<unzip dest="classes">
+			<fileset dir="lib">
+				<include name="*.jar"/>
+			</fileset>
+		</unzip>
+		<copy todir="classes">
+			<fileset dir="src">
+				<include name="*.xml"/>
+				<include name="*.properties"/>
+			</fileset>
+		</copy>
+		-->
+		<jar destfile="QuerySrv.jar" basedir="classes">
+			<manifest>
+				<attribute name="Main-Class" value="com.asiainfo.MainApp" />
+				<attribute name="Svn-Version" value="${svn_version}" />
+			</manifest>
+		</jar>
+		<echo>==========打包完成===========</echo>
+		<delete dir="classes" />
+		<echo>========清理临时文件夹完成======</echo>
+	</target>
+
+	<target name="clean">
+		<delete dir="classes" />
+	</target>
+
+</project>
