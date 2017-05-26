@@ -1,0 +1,5 @@
+2017-05-25 20:40:01.030 [main] INFO  - * load memory begin
+2017-05-25 20:40:07.770 [main] WARN  - Can not find the sysp1_inf_msi.curr
+2017-05-25 20:40:07.770 [main] WARN  - Can not find the sysp1_inf_pbs.curr
+2017-05-25 20:40:07.770 [main] INFO  - * load memory end
+2017-05-25 20:40:07.779 [main] INFO  - Start Complete
