@@ -32,13 +32,32 @@ import com.asiainfo.Constant;
 import com.asiainfo.Constant.Sysp1InfMsi;
 import com.asiainfo.Constant.Sysp1InfPbs;
 import com.asiainfo.method.ColumnMethod;
-import com.asiainfo.resource.BOSSRecord.Pair;
 import com.asiainfo.util.HeadMessage;
 import com.asiainfo.util.MysqlJdbcProcess;
 import com.asiainfo.util.StringUtil;
+import com.asiainfo.util.StringUtil.Pair;
 
 public class BOSSRecord extends Record {
 	public static final Logger logger_trans = LoggerFactory.getLogger("translate");
+
+	private Vector<CDRINFO> m_vecCDR=null;		// 存储原始清单
+	private String m_subno = null;				// 查询号码
+	private int m_type=-1;						// 清单查询类型
+	private TmpSpInfos m_strSpInfos = null;		// 保存业务名称等信息
+	private String m_realMsisdn = null; 		// 集团语音过滤业务的主叫号码
+	private StringBuffer m_resbuf = null;		// 存储返回串
+	
+	private final static int NOT_SURE = 99;		// 待确定类型
+	private final static int VOICE = 1;			// 语音通话
+	private final static int SMS = 2;			// 短/彩信
+	private final static int GPRS_WLAN = 3;		// 上网
+	private final static int MOBILESELF = 4;	// 增值业务
+	private final static int SP = 5;			// 代收费
+	private final static int FIX = 6;			// 套餐及固定费
+	private final static int OTHER = 7;			// 其他扣费
+	private final static int GROUP_VOICE = 8;	// 普通集团语音产品
+	private final static int GROUP_DATA = 9;	// 集团短彩产品
+	private final static int GROUP_DATA_DF = 10;// 数据业务集团代付
 	
 	@Override
 	public StringBuffer GetResult(HeadMessage head, HashMap<String, String> map) {
@@ -177,15 +196,15 @@ public class BOSSRecord extends Record {
 	        }
 
 			if (m_type == 55) {
-				realMsisdn = map.get("RealMsisdn"); // 真实号码real_msisdn [849,24],左对齐,右补空格
-				if (realMsisdn == null || realMsisdn.length() == 0) {
+				m_realMsisdn = map.get("RealMsisdn"); // 真实号码real_msisdn [849,24],左对齐,右补空格
+				if (m_realMsisdn == null || m_realMsisdn.length() == 0) {
 					logger.error("集团语音行业骚扰查询必须指定主叫号码RealMsisdn");
 	    			resbuf.setLength(0);
 	    			head.setErrcode("3");
 	    			resbuf.append("&MSG=error");
 	    			return resbuf;
-				} else if (realMsisdn.startsWith("+86")) {
-					realMsisdn = realMsisdn.substring(3);
+				} else if (m_realMsisdn.startsWith("+86")) {
+					m_realMsisdn = m_realMsisdn.substring(3);
 				}
 				
 				String B_subno = map.get("MsisdnB"); // 规整后对方号码B_subno[165,24],左对齐,右补空格
@@ -193,12 +212,12 @@ public class BOSSRecord extends Record {
 					// realMsisdn需要确认前缀问题,B_subno无前缀,注意字段无换行符
 					filter = new ValueFilter(
 							CompareFilter.CompareOp.EQUAL, 
-							new RegexStringComparator("11.{846}.*"+realMsisdn+" *.{"+(Constant.CDR_LEN_GROVOICE-2-872)+"}")); 
+							new RegexStringComparator("11.{846}.*"+m_realMsisdn+" *.{"+(Constant.CDR_LEN_GROVOICE-2-872)+"}")); 
 				} else {
 					filter = new ValueFilter(
 							CompareFilter.CompareOp.EQUAL, 
 							new RegexStringComparator("11.{162}"+B_subno+" {"+(24-B_subno.length())+"}"+
-									".{660}.*"+realMsisdn+" *.{"+(Constant.CDR_LEN_GROVOICE-2-872)+"}")); 
+									".{660}.*"+m_realMsisdn+" *.{"+(Constant.CDR_LEN_GROVOICE-2-872)+"}")); 
 				}
 			}
 
@@ -758,7 +777,7 @@ public class BOSSRecord extends Record {
 			if (m_type == 55) {
 				// realMsisdn传入无空格，经过正则匹配，prefix应该不会出现负长度
 				String realMs = oneCDRINFO.cdr.substring(848, 872).trim();
-				int prefixLen = realMs.length() - realMsisdn.length();
+				int prefixLen = realMs.length() - m_realMsisdn.length();
 				if (prefixLen < 0) {
 					oneCDRINFO.flag = CDR_NONE_EFFECTIVE;
 	                filtercnt++;
@@ -792,7 +811,7 @@ public class BOSSRecord extends Record {
 		String duration;
 		String dis_dura;
 
-		ll_map = new TreeMap<String, LLSum>();
+		TreeMap<String, LLSum> ll_map = new TreeMap<String, LLSum>();
 		for (CDRINFO cdrInfo : m_vecCDR) {
 			if (cdrInfo.flag == CDR_EFFECTIVE) {
 				usetype = 0;
@@ -945,8 +964,8 @@ public class BOSSRecord extends Record {
 	private int RepairQuery() {
 		String B_subno;
 		String msisdnB;
-		
-		rep_set = new HashSet<String>();
+
+		HashSet<String> rep_set = new HashSet<String>();
 		for (CDRINFO cdrInfo : m_vecCDR) {
 			if (cdrInfo.flag == CDR_EFFECTIVE) {
 				if (cdrInfo.cdr.startsWith("01")) {			
@@ -1800,7 +1819,8 @@ public class BOSSRecord extends Record {
 		int toll_fee = 0;
 		int mergecnt = 0;
 
-		MergeGprsMap = new HashMap<String, MergeValue>();
+
+		HashMap<String, MergeValue> MergeGprsMap = new HashMap<String, MergeValue>();
 		
 	    for (int i = 0; i != m_vecCDR.size(); i++) {
 	         if (m_vecCDR.elementAt(i).flag == CDR_EFFECTIVE && m_vecCDR.elementAt(i).cdr.startsWith("03")) {
@@ -1810,7 +1830,7 @@ public class BOSSRecord extends Record {
 						 && "AC/GC".contains(m_vecCDR.elementAt(i).cdr.substring(164, 166)) && toll_fee == 0) {
 					 
 					 mergeKey = GetMergeKey(m_vecCDR.elementAt(i).cdr);
-					 mergecnt += CombileMergeValue(m_vecCDR.elementAt(i), mergeKey, i);
+					 mergecnt += CombileMergeValue(MergeGprsMap, m_vecCDR.elementAt(i), mergeKey, i);
 	             }
 	         }
 	    }
@@ -1850,7 +1870,7 @@ public class BOSSRecord extends Record {
 		return charging_id+start_time+net_type+asubno+special_flag+dis_id+flag;
 	}
 	
-	private int CombileMergeValue(CDRINFO cdrInfo, String mergeKey, int i) {
+	private int CombileMergeValue(HashMap<String, MergeValue> MergeGprsMap, CDRINFO cdrInfo, String mergeKey, int i) {
 		String up_usage = cdrInfo.cdr.substring(961, 972);
 		String down_usage = cdrInfo.cdr.substring(972, 983);
 		String timelong = cdrInfo.cdr.substring(934, 941);
@@ -2568,39 +2588,17 @@ public class BOSSRecord extends Record {
 		m_resbuf.append("&CDR="+tmp_key + "," + tmp_total_volume + "MB," + tmp_outside + "MB," + tmp_dis_dura + "MB");
 	}
 	
-	private Vector<CDRINFO> m_vecCDR=null; 
-	private HashMap<String, MergeValue> MergeGprsMap=null;
-	private HashSet<String> rep_set = null;
-	private TreeMap<String, LLSum> ll_map = null;
-	private int m_type=-1;
-	private String m_subno = null;
-	private StringBuffer m_resbuf = null;
-	private TmpSpInfos m_strSpInfos = null;
-	private String realMsisdn = null;
-	
-	private final static int NOT_SURE = 99;		// need get the cdr_type form the sp info
-	private final static int VOICE = 1;			// 语音通话
-	private final static int SMS = 2;			// 短/彩信
-	private final static int GPRS_WLAN = 3;		// 上网
-	private final static int MOBILESELF = 4;	// 增值业务
-	private final static int SP = 5;			// 代收费
-	private final static int FIX = 6;			// 套餐及固定费
-	private final static int OTHER = 7;			// 其他扣费
-	private final static int GROUP_VOICE = 8;	// 普通集团语音产品
-	private final static int GROUP_DATA = 9;	// 集团短彩产品
-	private final static int GROUP_DATA_DF = 10;// 数据业务集团代付
-	
 	private static class TOLLINFO{
-		public String b_switch_flag;// 2
-		public String b_operator;	// 2
-		public String b_user_type;	// 2
-		public String b_brand;		// 1
-		public String b_area;		// 10
-		public String msisdnC;		// 24
-		public String start_time;	// 14
-		public String bill_period;	// 6
-		public String toll_type;	// 1
-		public String roam_type;	// 1
+		public String b_switch_flag;	// 2
+		public String b_operator;		// 2
+		public String b_user_type;		// 2
+		public String b_brand;			// 1
+		public String b_area;			// 10
+		public String msisdnC;			// 24
+		public String start_time;		// 14
+		public String bill_period;		// 6
+		public String toll_type;		// 1
+		public String roam_type;		// 1
 		public String visit_switch_flag;// 2
 		
 		public TOLLINFO(){
@@ -2620,18 +2618,18 @@ public class BOSSRecord extends Record {
 	
 	private static class KeyInfo {
 		String negw_file_type;	//话单格式 2
-		String billtype;	//帐单类型 2
-		String bustype;		//通信业务类型 2
-		String subbustype;	//子业务类型 2
-		String buscode;		//业务代码 5
-		String icpcode;		//ICP代码 8
-		String filetype;	//文件类型 2
-		String tolltype;	//长途类型 1
-		String switchflag;	//计费号码归属局 2
-		String subno;		//号码 24
-		String ratetype;	//计费类型 1
-		long mobfee;		//长途费
-		long tollfee;		//长途费
+		String billtype;		//帐单类型 2
+		String bustype;			//通信业务类型 2
+		String subbustype;		//子业务类型 2
+		String buscode;			//业务代码 5
+		String icpcode;			//ICP代码 8
+		String filetype;		//文件类型 2
+		String tolltype;		//长途类型 1
+		String switchflag;		//计费号码归属局 2
+		String subno;			//号码 24
+		String ratetype;		//计费类型 1
+		long mobfee;			//长途费
+		long tollfee;			//长途费
 		
 		public KeyInfo(){
 			negw_file_type="";
@@ -2735,34 +2733,4 @@ public class BOSSRecord extends Record {
 		}
 	}
 	
-
-	public class Pair<E, F> {
-		private E first;
-		private F second;
-	
-		public Pair() {
-		}
-	
-		public Pair(E _first, F _second) {
-			this.first = _first;
-			this.second = _second;
-		}
-	
-		public E getFirst() {
-			return first;
-		}
-	
-		public void setFirst(E first) {
-			this.first = first;
-		}
-	
-		public F getSecond() {
-			return second;
-		}
-	
-		public void setSecond(F second) {
-			this.second = second;
-		}
-	}
-
 }

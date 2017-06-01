@@ -7,17 +7,17 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Vector;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import org.apache.hadoop.hbase.client.HTable;
+import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.ResultScanner;
 import org.apache.hadoop.hbase.client.Scan;
+import org.apache.hadoop.hbase.client.Table;
 import org.apache.hadoop.hbase.filter.Filter;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.slf4j.Logger;
@@ -28,7 +28,6 @@ import com.asiainfo.util.HeadMessage;
 
 public abstract class Record {
 	protected static final Logger logger = LoggerFactory.getLogger(Record.class);
-	protected static ConcurrentHashMap<String, HTable> m_htables = new ConcurrentHashMap<String, HTable>();
 	protected long m_transTime = 0;
 	protected long m_hbaseTime = 0;
 	protected int m_hbaseRow = 0;
@@ -104,14 +103,14 @@ public abstract class Record {
 	}
 	
 	protected class Task implements Callable<Integer>{
-		private HTable htable;
+		private Table table;
 		private Scan scan;
 		Vector<CDRINFO> m_vecCDR;
 		String col1;
 		String col2;
 
-		public Task(HTable _htable, Scan _scan, Vector<CDRINFO> _vecCDR, String _col1, String _col2) {
-			htable = _htable;
+		public Task(Table _table, Scan _scan, Vector<CDRINFO> _vecCDR, String _col1, String _col2) {
+			table = _table;
 			scan = _scan;
 			m_vecCDR = _vecCDR;
 			col1 = _col1;
@@ -125,7 +124,7 @@ public abstract class Record {
     		StringBuffer tmp = new StringBuffer();
     		
 	        try {
-	    		rs = htable.getScanner(scan);
+	    		rs = table.getScanner(scan);
 				for (Result r : rs) {
 					tmp.setLength(0);
 					byte[] b_col1 = r.getValue(Bytes.toBytes("Info"), Bytes.toBytes(col1));
@@ -154,12 +153,8 @@ public abstract class Record {
 	
 	protected void SubGetCDR(String mob, String startkey, String endkey, String tabname, 
 			Vector<CDRINFO> m_vecCDR, String col1, String col2) throws IOException {
-		HTable htable = (HTable) m_htables.get(tabname);
-		if (htable == null) {
-			htable = new HTable(Constant.m_config, tabname);
-			m_htables.put(tabname, htable);
-		}
-
+		
+		Table table = Constant.connection.getTable(TableName.valueOf(tabname));
 		Scan scan = new Scan();
 		logger.info("* start: [" + startkey + "],end: [" + endkey + "],table: [" + tabname +"]");
 
@@ -170,7 +165,7 @@ public abstract class Record {
 		}
 		
 		// ³¬Ê±¿ØÖÆ
-		Task task = new Task(htable, scan, m_vecCDR, col1, col2);
+		Task task = new Task(table, scan, m_vecCDR, col1, col2);
 		Future<Integer> future = null;
 
 		try {

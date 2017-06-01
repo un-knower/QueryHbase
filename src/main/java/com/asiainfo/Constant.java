@@ -12,6 +12,8 @@ import java.util.Vector;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;
+import org.apache.hadoop.hbase.client.Connection;
+import org.apache.hadoop.hbase.client.ConnectionFactory;
 import org.apache.hadoop.hbase.security.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,7 +44,8 @@ public class Constant {
 	public static String USERNAME = "HBaseDeveloper";
 	public static String USERKEYTABFILE = "./user.keytab";
 	public static String KRB5FILE = "./krb5.conf";
-	public static Configuration m_config = HBaseConfiguration.create();
+	public static Configuration configuration = HBaseConfiguration.create();
+	public static Connection connection = null;
 	private static final String ZOOKEEPER_DEFAULT_LOGIN_CONTEXT_NAME = "Client";
 	private static final String ZOOKEEPER_SERVER_PRINCIPAL_KEY = "zookeeper.server.principal";
 	private static final String ZOOKEEPER_DEFAULT_SERVER_PRINCIPAL = "zookeeper/hadoop";
@@ -378,8 +381,14 @@ public class Constant {
 	// 初始化数据库
 	public static void initHBase(Properties properties) {
 
+		try {
+			connection = ConnectionFactory.createConnection(configuration);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
 		// 如果是安全集群，则在登录之前需要验证
-		if (User.isHBaseSecurityEnabled(m_config)) {
+		if (User.isHBaseSecurityEnabled(configuration)) {
 
 			try {
 				// 设置登录的上下文名字为client
@@ -389,7 +398,7 @@ public class Constant {
 				HbaseLoginUtil.setZookeeperServerPrincipal(ZOOKEEPER_SERVER_PRINCIPAL_KEY, ZOOKEEPER_DEFAULT_SERVER_PRINCIPAL);
 
 				// 设置user.keytab和krb5.conf
-				HbaseLoginUtil.login(Constant.USERNAME, Constant.USERKEYTABFILE, Constant.KRB5FILE, m_config);
+				HbaseLoginUtil.login(Constant.USERNAME, Constant.USERKEYTABFILE, Constant.KRB5FILE, configuration);
 				
 			} catch (IOException e) {
 				e.printStackTrace();
