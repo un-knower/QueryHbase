@@ -38,7 +38,7 @@ public class LoadTimeTask {
 		t.scheduleAtFixedRate(new TimerTask() {
 
 			public void run() {
-				Constant.initDB();
+				new Constant().initMysql();
 			}
 		}, date, PERIOD_DAY);
 

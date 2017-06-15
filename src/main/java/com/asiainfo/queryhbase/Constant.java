@@ -6,7 +6,6 @@ import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map.Entry;
-import java.util.Properties;
 import java.util.TreeSet;
 import java.util.Vector;
 
@@ -26,24 +25,37 @@ import com.asiainfo.queryhbase.util.StringUtil;
 public class Constant {
 
 	public static int OVERTIME=600;
-	public static int HBASE_TIMEOUT=20;
+	public static int HBASE_TIMEOUT=10;
 	public static int SUBBAG_OVERTIME=120;
 	public static int BLANKTIME=30;
 	public static int PORT=8080;
-	public static String CHARSET="gbk";
 	public static int THREADNUM=4;
 	public static int THREADPOOLNUM=16;
 	public static int CONNECTPOOL=1024;
 	public static int READBUFFERSIZE=1024;
 	public static int WRITEBUFFERSIZE=8192;
 	public static int BAGSIZE=8192;
-	public static boolean DEBUGMODE = false;
 	public static int MAX_CDR_COUNT=50000;
+	public static int DBLOAD_MODE = 0;
 	public static int DBRELOAD_TIME=2;
+	public static boolean DEBUGMODE = false;
+	public static String LOG_PATH = "./";
+	public static String DBRELOAD_TIME_STR="02:00";
+	public static String PREFIX_FILTER = "020,0668";
 	public static String IP = "";
 	public static String USERNAME = "HBaseDeveloper";
 	public static String USERKEYTABFILE = "./user.keytab";
 	public static String KRB5FILE = "./krb5.conf";
+	public static String DBURL = "jdbc:mysql://172.16.1.12:3306/paas";
+	public static String DBNAME = "test";
+	public static String DBPWD = "JONNAEIDFNHM";
+	public static String DBFILE_DIR = "./TranslateData";
+	public static String LOGBACK_CONF_FILE = "./logback.xml";
+	public static String DEBUG_CDR_FILE = "./debugcdr.xml";
+	public static String LOGIN_USERS_PWD = null;
+	public static String CHARSET="gbk";
+	public static int MIN_SAME_MSI_LEN = 11;
+
 	public static Configuration configuration = HBaseConfiguration.create();
 	public static Connection connection = null;
 	private static final String ZOOKEEPER_DEFAULT_LOGIN_CONTEXT_NAME = "Client";
@@ -103,42 +115,6 @@ public class Constant {
 	// 号段表
 	public static Vector<Sysp1InfMsi> INF_MSI_VEC = null;
 	public static Vector<Sysp1InfPbs> INF_PBS_VEC = null;
-	    
-	// logback 配置文件常量
-	public static String LOGBACK_CONF_FILE = "./logback.xml";
-	public static String DEBUG_CDR_FILE = "./debugcdr.xml";
-	public static String LOGIN_USERS_PWD = null;
-
-	public final static String CMD_BIND_REQ_RSP = "000";
-	public final static String CMD_UNBIND_REQ_RSP = "001";
-	public final static String CMD_PWDCHG_REQ_RSP = "002";
-	public final static String CMD_HEARTBAG_REQ_RSP = "999";
-	// 清单
-	public final static String CMD_CDR_REQ = "100";
-	public final static String CMD_CDR_RSP = "200";
-	public final static String CMD_CLIENT_CDR_RSP = "101";
-	// 账单
-	public final static String CMD_ACCT_REQ = "300";
-	public final static String CMD_ACCT_RSP = "400";
-	public final static String CMD_CLIENT_ACCT_RSP = "301";
-	// 和账单
-	public final static String CMD_ACCT_SUM_REQ = "302";
-	public final static String CMD_CLIENT_ACCT_SUM_RSP = "303";
-	// 流量账单
-	public final static String CMD_ACCT_NET_USAGE_REQ = "304";
-	public final static String CMD_CLIENT_ACCT_NET_USAGE_RSP = "305";
-	// 和账单、流量账单服务端返回码
-	public final static String CMD_ACCT_SUM_OR_NET_USAGE_RSP = "401";
-	// 和飞信
-	public final static String CMD_HEFETION_REQ = "500";
-	public final static String CMD_HEFETION_RSP = "502";
-	public final static String CMD_CLIENT_HEFETION_RSP = "501";
-	// 集团账单
-	public final static String CMD_GROUP_REQ = "600";
-	public final static String CMD_GROUP_MX_REQ = "603";
-	public final static String CMD_GROUP_DF_REQ = "604";
-	public final static String CMD_GROUP_RSP = "602";
-	public final static String CMD_CLIENT_GROUP_RSP = "601";
 	
 	// 清单长度 包括\r\n;
 	public final static int CDR_LEN_VOICE = 1018;
@@ -155,7 +131,6 @@ public class Constant {
 	public final static int CDR_LEN_FETION = 1500;
 
 	// 号段信息
-	public static int MIN_SAME_MSI_LEN = 11;
 	public static class Sysp1InfMsi implements Comparable<Object> {
 		public String vc_intftg;		// 7
 		public String vc_msisdn_low;	// 15
@@ -219,27 +194,7 @@ public class Constant {
 	
 	
 	// 初始化配置
-	public static void initData(Properties properties) throws IOException {
-		OVERTIME = StringUtil.ParseInt(properties.getProperty("OVERTIME","600"));
-		HBASE_TIMEOUT = StringUtil.ParseInt(properties.getProperty("HBASE_TIMEOUT", "10"));
-		SUBBAG_OVERTIME = StringUtil.ParseInt(properties.getProperty("SUBBAG_OVERTIME", "120"));
-		PORT = StringUtil.ParseInt(properties.getProperty("PORT", "8080"));
-		CHARSET=properties.getProperty("CHARSET", "gbk");
-		THREADNUM = StringUtil.ParseInt(properties.getProperty("THREADNUM", "4"));
-		THREADPOOLNUM = StringUtil.ParseInt(properties.getProperty("THREADPOOLNUM", "16"));
-		CONNECTPOOL = StringUtil.ParseInt(properties.getProperty("CONNECTPOOL", "1024"));
-		READBUFFERSIZE = StringUtil.ParseInt(properties.getProperty("READBUFFERSIZE", "1024"));
-		WRITEBUFFERSIZE = StringUtil.ParseInt(properties.getProperty("WRITEBUFFERSIZE", "8192"));
-		BAGSIZE = StringUtil.ParseInt(properties.getProperty("BAGSIZE", "8192"));
-		LOGBACK_CONF_FILE=properties.getProperty("LOGBACK_CONF_FILE", "./logback.xml");
-		DEBUG_CDR_FILE=properties.getProperty("DEBUG_CDR_FILE", "./debugcdr.xml");
-		USERNAME=properties.getProperty("USERNAME", "HBaseDeveloper");
-		USERKEYTABFILE=properties.getProperty("USERKEYTABFILE", "./user.keytab");
-		KRB5FILE=properties.getProperty("KRB5FILE", "./krb5.conf");
-		DEBUGMODE = "true".equalsIgnoreCase(properties.getProperty("DEBUG_MODE"));
-		MAX_CDR_COUNT = StringUtil.ParseInt(properties.getProperty("MAX_CDR_COUNT", "50000"));
-		LOGIN_USERS_PWD = properties.getProperty("LOGIN_USERS_PWD", "");
-		
+	public void initData() throws IOException {
 		BILL_USER_MAP = StringUtil.toMAp(LOGIN_USERS_PWD);
 		if (BILL_USER_MAP.size() == 0) {
 			throw new IllegalStateException();
@@ -249,11 +204,11 @@ public class Constant {
 			}
 		}
 		
-		String[] tmp = properties.getProperty("DBRELOAD_TIME","02:00").split(":");
+		String[] tmp = DBRELOAD_TIME_STR.split(":");
 		DBRELOAD_TIME=StringUtil.ParseInt(tmp[0]);
 		IP = InetAddress.getLocalHost().getHostAddress();
 		
-		tmp = properties.getProperty("PREFIX_FILTER","020,0668").split(",");
+		tmp = PREFIX_FILTER.split(",");
 		for (String pre : tmp) {
 			PrefixSet.add(pre);
 		}
@@ -261,9 +216,8 @@ public class Constant {
 	}
 
 	// 初始化日志
-	public static void initLog(Properties properties) throws IOException {
-		String logpath = properties.getProperty("LOG_PATH");
-		System.setProperty("LOG_HOME", logpath);
+	public void initLog() throws IOException {
+		System.setProperty("LOG_HOME", LOG_PATH);
 		
 		File logbackConfFile = new File(Constant.LOGBACK_CONF_FILE);
 		if (!logbackConfFile.canRead()) {
@@ -275,20 +229,19 @@ public class Constant {
 	}
 	
 	// 初始化数据库，初始化接口
-	public static void initDB(Properties properties) {
+	public void initDB() {
 		Logger logger = LoggerFactory.getLogger(Constant.class);
 		
-		MysqlJdbcProcess.DBURL=properties.getProperty("DBURL");
-		MysqlJdbcProcess.DBNAME=properties.getProperty("DBNAME");
-		MysqlJdbcProcess.DBPWD=PWDHandle.decrypt(properties.getProperty("DBPWD"));
-		MysqlJdbcProcess.DBFILE_DIR=properties.getProperty("DBFILE_DIR");
+		MysqlJdbcProcess.DBURL=DBURL;
+		MysqlJdbcProcess.DBNAME=DBNAME;
+		MysqlJdbcProcess.DBPWD=PWDHandle.decrypt(DBPWD);
+		MysqlJdbcProcess.DBFILE_DIR=DBFILE_DIR;
 		
-		int mode = StringUtil.ParseInt(properties.getProperty("DBLOAD_MODE", "0"));
 		String src = MysqlJdbcProcess.getDBFilePath(MysqlJdbcProcess.CURR_DIR);
 		String dst = MysqlJdbcProcess.getDBFilePath(MysqlJdbcProcess.BAK_DIR);
 
 		//启动模式：0-->mysql启动，1-->文件启动
-		if(mode == 0){
+		if(DBLOAD_MODE == 0){
 			
 			//1、备份文件，改后缀
 			try {
@@ -328,7 +281,7 @@ public class Constant {
 		try {
 			MysqlJdbcProcess.loadMemory();
 		} catch (IOException e) {
-			if(mode != 0){
+			if(DBLOAD_MODE != 0){
 				logger.error("文件模式启动失败，请修改配置项：DBLOAD_MODE=0", e);
 			} else {
 				logger.error("文件读取失败", e);
@@ -339,7 +292,7 @@ public class Constant {
 	}
 	
 	// 初始化数据库，定时任务接口
-	public static void initDB() {
+	public void initMysql() {
 		Logger logger = LoggerFactory.getLogger(Constant.class);
 		
 		String src = MysqlJdbcProcess.getDBFilePath(MysqlJdbcProcess.CURR_DIR);
@@ -379,7 +332,7 @@ public class Constant {
 	}
 	
 	// 初始化数据库
-	public static void initHBase(Properties properties) {
+	public void initHBase() {
 
 		try {
 			connection = ConnectionFactory.createConnection(configuration);
@@ -406,4 +359,237 @@ public class Constant {
 
 		}
 	}
+
+	public static int getOVERTIME() {
+		return OVERTIME;
+	}
+
+	public static void setOVERTIME(int oVERTIME) {
+		OVERTIME = oVERTIME;
+	}
+
+	public static int getHBASE_TIMEOUT() {
+		return HBASE_TIMEOUT;
+	}
+
+	public static void setHBASE_TIMEOUT(int hBASE_TIMEOUT) {
+		HBASE_TIMEOUT = hBASE_TIMEOUT;
+	}
+
+	public static int getSUBBAG_OVERTIME() {
+		return SUBBAG_OVERTIME;
+	}
+
+	public static void setSUBBAG_OVERTIME(int sUBBAG_OVERTIME) {
+		SUBBAG_OVERTIME = sUBBAG_OVERTIME;
+	}
+
+	public static int getBLANKTIME() {
+		return BLANKTIME;
+	}
+
+	public static void setBLANKTIME(int bLANKTIME) {
+		BLANKTIME = bLANKTIME;
+	}
+
+	public static int getPORT() {
+		return PORT;
+	}
+
+	public static void setPORT(int pORT) {
+		PORT = pORT;
+	}
+
+	public static int getTHREADNUM() {
+		return THREADNUM;
+	}
+
+	public static void setTHREADNUM(int tHREADNUM) {
+		THREADNUM = tHREADNUM;
+	}
+
+	public static int getTHREADPOOLNUM() {
+		return THREADPOOLNUM;
+	}
+
+	public static void setTHREADPOOLNUM(int tHREADPOOLNUM) {
+		THREADPOOLNUM = tHREADPOOLNUM;
+	}
+
+	public static int getREADBUFFERSIZE() {
+		return READBUFFERSIZE;
+	}
+
+	public static void setREADBUFFERSIZE(int rEADBUFFERSIZE) {
+		READBUFFERSIZE = rEADBUFFERSIZE;
+	}
+
+	public static int getWRITEBUFFERSIZE() {
+		return WRITEBUFFERSIZE;
+	}
+
+	public static void setWRITEBUFFERSIZE(int wRITEBUFFERSIZE) {
+		WRITEBUFFERSIZE = wRITEBUFFERSIZE;
+	}
+
+	public static int getBAGSIZE() {
+		return BAGSIZE;
+	}
+
+	public static void setBAGSIZE(int bAGSIZE) {
+		BAGSIZE = bAGSIZE;
+	}
+
+	public static int getMAX_CDR_COUNT() {
+		return MAX_CDR_COUNT;
+	}
+
+	public static void setMAX_CDR_COUNT(int mAX_CDR_COUNT) {
+		MAX_CDR_COUNT = mAX_CDR_COUNT;
+	}
+
+	public static int getDBLOAD_MODE() {
+		return DBLOAD_MODE;
+	}
+
+	public static void setDBLOAD_MODE(int dBLOAD_MODE) {
+		DBLOAD_MODE = dBLOAD_MODE;
+	}
+
+	public static int getDBRELOAD_TIME() {
+		return DBRELOAD_TIME;
+	}
+
+	public static void setDBRELOAD_TIME(int dBRELOAD_TIME) {
+		DBRELOAD_TIME = dBRELOAD_TIME;
+	}
+
+	public static boolean isDEBUGMODE() {
+		return DEBUGMODE;
+	}
+
+	public static void setDEBUGMODE(boolean dEBUGMODE) {
+		DEBUGMODE = dEBUGMODE;
+	}
+
+	public static String getLOG_PATH() {
+		return LOG_PATH;
+	}
+
+	public static void setLOG_PATH(String lOG_PATH) {
+		LOG_PATH = lOG_PATH;
+	}
+
+	public static String getDBRELOAD_TIME_STR() {
+		return DBRELOAD_TIME_STR;
+	}
+
+	public static void setDBRELOAD_TIME_STR(String dBRELOAD_TIME_STR) {
+		DBRELOAD_TIME_STR = dBRELOAD_TIME_STR;
+	}
+
+	public static String getIP() {
+		return IP;
+	}
+
+	public static void setIP(String iP) {
+		IP = iP;
+	}
+
+	public static String getUSERNAME() {
+		return USERNAME;
+	}
+
+	public static void setUSERNAME(String uSERNAME) {
+		USERNAME = uSERNAME;
+	}
+
+	public static String getUSERKEYTABFILE() {
+		return USERKEYTABFILE;
+	}
+
+	public static void setUSERKEYTABFILE(String uSERKEYTABFILE) {
+		USERKEYTABFILE = uSERKEYTABFILE;
+	}
+
+	public static String getKRB5FILE() {
+		return KRB5FILE;
+	}
+
+	public static void setKRB5FILE(String kRB5FILE) {
+		KRB5FILE = kRB5FILE;
+	}
+
+	public static String getDBURL() {
+		return DBURL;
+	}
+
+	public static void setDBURL(String dBURL) {
+		DBURL = dBURL;
+	}
+
+	public static String getDBNAME() {
+		return DBNAME;
+	}
+
+	public static void setDBNAME(String dBNAME) {
+		DBNAME = dBNAME;
+	}
+
+	public static String getDBPWD() {
+		return DBPWD;
+	}
+
+	public static void setDBPWD(String dBPWD) {
+		DBPWD = dBPWD;
+	}
+
+	public static String getDBFILE_DIR() {
+		return DBFILE_DIR;
+	}
+
+	public static void setDBFILE_DIR(String dBFILE_DIR) {
+		DBFILE_DIR = dBFILE_DIR;
+	}
+
+	public static String getLOGBACK_CONF_FILE() {
+		return LOGBACK_CONF_FILE;
+	}
+
+	public static void setLOGBACK_CONF_FILE(String lOGBACK_CONF_FILE) {
+		LOGBACK_CONF_FILE = lOGBACK_CONF_FILE;
+	}
+
+	public static String getDEBUG_CDR_FILE() {
+		return DEBUG_CDR_FILE;
+	}
+
+	public static void setDEBUG_CDR_FILE(String dEBUG_CDR_FILE) {
+		DEBUG_CDR_FILE = dEBUG_CDR_FILE;
+	}
+
+	public static String getLOGIN_USERS_PWD() {
+		return LOGIN_USERS_PWD;
+	}
+
+	public static void setLOGIN_USERS_PWD(String lOGIN_USERS_PWD) {
+		LOGIN_USERS_PWD = lOGIN_USERS_PWD;
+	}
+
+	public static String getCHARSET() {
+		return CHARSET;
+	}
+
+	public static void setCHARSET(String cHARSET) {
+		CHARSET = cHARSET;
+	}
+
+	public static TreeSet<String> getPrefixSet() {
+		return PrefixSet;
+	}
+
+	public static void setPrefixSet(TreeSet<String> prefixSet) {
+		PrefixSet = prefixSet;
+	}
+	
 }

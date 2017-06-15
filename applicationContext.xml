@@ -1,0 +1,168 @@
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+	xmlns:util="http://www.springframework.org/schema/util"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+	http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+	http://www.springframework.org/schema/util
+	http://www.springframework.org/schema/util/spring-util-2.5.xsd">
+	
+	<!-- 
+		共分为4种：property是公共节点，EL表达式解析节点，basevalue模板节点，其余是各业务节点
+		1.property是程序本身的配置，例如日志路径等
+		2.*EL是表达式解析节点，用于解析表达式，全大写的单词是需要业务处理类去替换的
+		3.业务节点继承并可以覆盖basevalue的参数，需要指定自身业务的参数，业务节点的处理类必须指定正确，一般必须指定：
+		  name是会作为线程名打印到日志，请保持不超过7字节
+		  inputDir处理目录
+		  outputDir输出目录
+		  ...
+	-->
+	
+	<bean id="property" class="com.asiainfo.queryhbase.Constant">
+		<property name="propertyMap">
+			<util:map map-class="java.util.HashMap">
+				<entry key="LOG_PATH" value="./log" />
+				<entry key="LOGBACK_CONF_FILE" value="./logback.xml" />
+				<entry key="krb5conf" value="/home/bd_qzdzx/krb5.conf" />
+				<entry key="keytab" value="/home/bd_qzdzx/user.keytab" />
+				<entry key="jaasconf" value="/opt/client/HDFS/hadoop/etc/hadoop/jaas.conf" />
+				<entry key="principal" value="bd_qzdzx@HADOOP.COM" />
+				<!-- 
+				开发集群：jdbc:hive2://172.16.1.228:10000/default
+				联调集群：jdbc:hive2://172.32.0.3:24002,172.32.0.2:24002,172.32.0.1:24002/;serviceDiscoveryMode=zooKeeper;zooKeeperNamespace=hiveserver2;sasl.qop=auth-conf;auth=KERBEROS;principal=hive/hadoop.hadoop.com@HADOOP.COM
+				生产集群：jdbc:hive2://192.252.102.89:24002,192.252.102.90:24002,192.252.102.139:24002/;serviceDiscoveryMode=zooKeeper;zooKeeperNamespace=hiveserver2_2;sasl.qop=auth-conf;auth=KERBEROS;principal=hive2/hadoop.hadoop.com@HADOOP.COM
+				-->
+				<entry key="connString" value="jdbc:hive2://172.16.1.228:10000/default" />
+				<entry key="class" value="org.apache.hive.jdbc.HiveDriver" />
+			</util:map>
+		</property>
+	</bean>
+
+	<bean id="000" class="com.asiainfo.queryhbase.service.BindReqBridge"  >
+		<property name="name"  value="请求登陆"" />
+		<property name="record" >
+			<null/>
+		</property>
+		<property name="rspCommand"  value="000" />
+	</bean>
+	<bean id="001" class="com.asiainfo.queryhbase.service.BindRelieaseBridge"  >
+		<property name="name"  value="请求解绑"" />
+		<property name="record" >
+			<null/>
+		</property>
+		<property name="rspCommand"  value="001" />
+	</bean>
+	
+	<bean id="100" class="com.asiainfo.queryhbase.service.ServiceReqBridge"  >
+		<property name="name"  value="清单查询"" />
+		<property name="record" >
+			<ref bean="bossRecord" />
+		</property>
+		<property name="rspCommand"  value="200" />
+	</bean>
+	<bean id="101" class="com.asiainfo.queryhbase.service.ServiceRspBridge"  >
+		<property name="name"  value="清单客户端确认"" />
+		<property name="record" >
+			<null/>
+		</property>
+		<property name="rspCommand"  value="200" />
+	</bean>
+	
+	<bean id="300" class="com.asiainfo.queryhbase.service.ServiceReqBridge"  >
+		<property name="name"  value="账单查询"" />
+		<property name="record" >
+			<ref bean="cxBill" />
+		</property>
+		<property name="rspCommand"  value="400" />
+	</bean>
+	<bean id="301" class="com.asiainfo.queryhbase.service.ServiceRspBridge"  >
+		<property name="name"  value="账单客户端确认"" />
+		<property name="record" >
+			<null/>
+		</property>
+		<property name="rspCommand"  value="400" />
+	</bean>
+	
+	<bean id="302" class="com.asiainfo.queryhbase.service.ServiceReqBridge"  >
+		<property name="name"  value="和账单查询"" />
+		<property name="record" >
+			<ref bean="heBill" />
+		</property>
+		<property name="rspCommand"  value="401" />
+	</bean>
+	<bean id="303" class="com.asiainfo.queryhbase.service.ServiceRspBridge"  >
+		<property name="name"  value="和账单客户端确认"" />
+		<property name="record" >
+			<null/>
+		</property>
+		<property name="rspCommand"  value="401" />
+	</bean>
+	
+	<bean id="304" class="com.asiainfo.queryhbase.service.ServiceReqBridge"  >
+		<property name="name"  value="流量账单查询"" />
+		<property name="record" >
+			<ref bean="llBill" />
+		</property>
+		<property name="rspCommand"  value="401" />
+	</bean>
+	<bean id="305" class="com.asiainfo.queryhbase.service.ServiceRspBridge"  >
+		<property name="name"  value="流量账单客户端确认"" />
+		<property name="record" >
+			<null/>
+		</property>
+		<property name="rspCommand"  value="401" />
+	</bean>
+	
+	<bean id="500" class="com.asiainfo.queryhbase.service.ServiceReqBridge"  >
+		<property name="name"  value="和飞信查询"" />
+		<property name="record" >
+			<ref bean="fetionBill" />
+		</property>
+		<property name="rspCommand"  value="502" />
+	</bean>
+	<bean id="501" class="com.asiainfo.queryhbase.service.ServiceRspBridge"  >
+		<property name="name"  value="和飞信客户端确认"" />
+		<property name="record" >
+			<null/>
+		</property>
+		<property name="rspCommand"  value="502" />
+	</bean>
+	
+	<bean id="600" class="com.asiainfo.queryhbase.service.ServiceReqBridge"  >
+		<property name="name"  value="集团总账单查询"" />
+		<property name="record" >
+			<ref bean="groupBill" />
+		</property>
+		<property name="rspCommand"  value="602" />
+	</bean>
+	<bean id="603" class="com.asiainfo.queryhbase.service.ServiceReqBridge"  >
+		<property name="name"  value="集团明细账单查询"" />
+		<property name="record" >
+			<ref bean="groupMxBill" />
+		</property>
+		<property name="rspCommand"  value="602" />
+	</bean>
+	<bean id="604" class="com.asiainfo.queryhbase.service.ServiceReqBridge"  >
+		<property name="name"  value="集团代付账单查询"" />
+		<property name="record" >
+			<ref bean="groupDfBill" />
+		</property>
+		<property name="rspCommand"  value="602" />
+	</bean>
+	<bean id="601" class="com.asiainfo.queryhbase.service.ServiceRspBridge"  >
+		<property name="name"  value="集团账单客户端确认"" />
+		<property name="record" >
+			<null/>
+		</property>
+		<property name="rspCommand"  value="602" />
+	</bean>
+	
+	<bean id="bossRecord" class="com.asiainfo.queryhbase.resource.BOSSRecord" />
+	<bean id="cxBill" class="com.asiainfo.queryhbase.resource.CXBill" />
+	<bean id="fetionBill" class="com.asiainfo.queryhbase.resource.FETIONBill" />
+	<bean id="groupBill" class="com.asiainfo.queryhbase.resource.GROUPBill" />
+	<bean id="groupMxBill" class="com.asiainfo.queryhbase.resource.GROUPMXBill" />
+	<bean id="groupDfBill" class="com.asiainfo.queryhbase.resource.GROUPDFBill" />
+	<bean id="heBill" class="com.asiainfo.queryhbase.resource.HEBill" />
+	<bean id="llBill" class="com.asiainfo.queryhbase.resource.LLBill" />
+	
+</beans>

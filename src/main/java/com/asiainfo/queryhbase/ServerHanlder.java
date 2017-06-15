@@ -5,27 +5,17 @@ import org.apache.mina.core.session.IdleStatus;
 import org.apache.mina.core.session.IoSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.BeansException;
+import org.springframework.context.support.FileSystemXmlApplicationContext;
 
-import com.asiainfo.queryhbase.resource.BOSSRecord;
-import com.asiainfo.queryhbase.resource.CXBill;
-import com.asiainfo.queryhbase.resource.FETIONBill;
-import com.asiainfo.queryhbase.resource.GROUPBill;
-import com.asiainfo.queryhbase.resource.GROUPDFBill;
-import com.asiainfo.queryhbase.resource.GROUPMXBill;
-import com.asiainfo.queryhbase.resource.HEBill;
-import com.asiainfo.queryhbase.resource.LLBill;
-import com.asiainfo.queryhbase.service.BindReqBridge;
-import com.asiainfo.queryhbase.service.HeartBeatBridge;
 import com.asiainfo.queryhbase.service.ServiceBridge;
-import com.asiainfo.queryhbase.service.ServiceReqBridge;
-import com.asiainfo.queryhbase.service.ServiceRspBridge;
 import com.asiainfo.queryhbase.util.HeadMessage;
 import com.asiainfo.queryhbase.util.StringUtil;
 
 public class ServerHanlder extends IoHandlerAdapter{
 	
 	protected static final Logger logger = LoggerFactory.getLogger(ServerHanlder.class); 
-	ServiceBridge servBridge = null;
+	protected static FileSystemXmlApplicationContext appContext;
 	
     @Override  
     public void messageReceived(IoSession session, Object message) throws Exception {
@@ -55,63 +45,14 @@ public class ServerHanlder extends IoHandlerAdapter{
     	if (session.getAttribute("sequence") == null) session.setAttribute("sequence", "");			// 当前sequence
         session.setAttribute("sumBlankTime", "0");
 
-        if(head.getCommand().startsWith(Constant.CMD_BIND_REQ_RSP)){
-    		logger.info("请求登陆");
-        	servBridge = new BindReqBridge(null, null);
-        } else if(head.getCommand().startsWith(Constant.CMD_UNBIND_REQ_RSP)){
-    		logger.info("请求解绑");
-        	servBridge = new BindReqBridge(null, null);
-        } else if(head.getCommand().startsWith(Constant.CMD_CDR_REQ)){
-    		logger.info("清单查询");
-    		servBridge = new ServiceReqBridge(new BOSSRecord(), Constant.CMD_CDR_RSP);
-        } else if(head.getCommand().startsWith(Constant.CMD_CLIENT_CDR_RSP)){
-        	logger.info("清单客户端确认");
-    		servBridge = new ServiceRspBridge(null, Constant.CMD_CDR_RSP);
-        } else if(head.getCommand().startsWith(Constant.CMD_ACCT_REQ)){
-        	logger.info("账单查询");
-    		servBridge = new ServiceReqBridge(new CXBill(), Constant.CMD_ACCT_RSP);
-        } else if(head.getCommand().startsWith(Constant.CMD_CLIENT_ACCT_RSP)){
-        	logger.info("账单客户端确认");
-    		servBridge = new ServiceRspBridge(null, Constant.CMD_ACCT_RSP);
-        } else if(head.getCommand().startsWith(Constant.CMD_ACCT_SUM_REQ)){
-        	logger.info("和账单查询");
-    		servBridge = new ServiceReqBridge(new HEBill(), Constant.CMD_ACCT_SUM_OR_NET_USAGE_RSP);
-        } else if(head.getCommand().startsWith(Constant.CMD_CLIENT_ACCT_SUM_RSP)){
-        	logger.info("和账单客户端确认");
-    		servBridge = new ServiceRspBridge(null, Constant.CMD_ACCT_SUM_OR_NET_USAGE_RSP);
-        } else if(head.getCommand().startsWith(Constant.CMD_ACCT_NET_USAGE_REQ)){
-        	logger.info("流量账单查询");
-    		servBridge = new ServiceReqBridge(new LLBill(), Constant.CMD_ACCT_SUM_OR_NET_USAGE_RSP);
-        } else if(head.getCommand().startsWith(Constant.CMD_CLIENT_ACCT_NET_USAGE_RSP)){
-        	logger.info("流量账单客户端确认");
-    		servBridge = new ServiceRspBridge(null, Constant.CMD_ACCT_SUM_OR_NET_USAGE_RSP);
-        } else if(head.getCommand().startsWith(Constant.CMD_HEFETION_REQ)){
-    		logger.info("和飞信查询");
-    		servBridge = new ServiceReqBridge(new FETIONBill(), Constant.CMD_HEFETION_RSP);
-        } else if(head.getCommand().startsWith(Constant.CMD_CLIENT_HEFETION_RSP)){
-        	logger.info("和飞信客户端确认");
-    		servBridge = new ServiceRspBridge(null, Constant.CMD_HEFETION_RSP);
-        } else if(head.getCommand().startsWith(Constant.CMD_GROUP_REQ)){
-        	logger.info("集团总账单查询");
-    		servBridge = new ServiceReqBridge(new GROUPBill(), Constant.CMD_GROUP_RSP);
-        } else if(head.getCommand().startsWith(Constant.CMD_GROUP_MX_REQ)){
-        	logger.info("集团明细账单查询");
-    		servBridge = new ServiceReqBridge(new GROUPMXBill(), Constant.CMD_GROUP_RSP);
-        } else if(head.getCommand().startsWith(Constant.CMD_GROUP_DF_REQ)){
-        	logger.info("集团代付账单查询");
-    		servBridge = new ServiceReqBridge(new GROUPDFBill(), Constant.CMD_GROUP_RSP);
-        } else if(head.getCommand().startsWith(Constant.CMD_CLIENT_GROUP_RSP)){
-        	logger.info("集团账单客户端确认");
-    		servBridge = new ServiceRspBridge(null, Constant.CMD_GROUP_RSP);
-        } else if(head.getCommand().startsWith(Constant.CMD_HEARTBAG_REQ_RSP)){
-    		logger.info("接收心跳");
-        	servBridge = new HeartBeatBridge(null, null);
-        } else {
+    	try {
+    		ServiceBridge servBridge = (ServiceBridge) appContext.getBean(head.getCommand());
+			logger.info(servBridge.getName());
+	        servBridge.handler(session, head, bodyUndecrypt);
+    	} catch (BeansException e) {
         	logger.warn("无法识别的请求，报文头：" + message.toString().substring(0, 60)); 
         	return ;
-        }
-		
-        servBridge.handler(session, head, bodyUndecrypt);
+    	}
     }
   
     @Override  
@@ -143,6 +84,14 @@ public class ServerHanlder extends IoHandlerAdapter{
     public void sessionClosed(IoSession session) throws Exception {  
         logger.info("server-session关闭连接断开"); 
         logger.info("xxxxxxxxxxxxxxxxxxxxxxxxxx");
-    }  
+    }
+
+	public static FileSystemXmlApplicationContext getAppContext() {
+		return appContext;
+	}
+
+	public static void setAppContext(FileSystemXmlApplicationContext appContext) {
+		ServerHanlder.appContext = appContext;
+	}  
 
 }

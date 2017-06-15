@@ -1,10 +1,7 @@
 package com.asiainfo.queryhbase;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.util.Properties;
 
 import org.apache.mina.core.session.IdleStatus;
 import org.apache.mina.filter.codec.ProtocolCodecFilter;
@@ -13,6 +10,7 @@ import org.apache.mina.filter.logging.LoggingFilter;
 import org.apache.mina.transport.socket.nio.NioSocketAcceptor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.support.FileSystemXmlApplicationContext;
 
 import com.asiainfo.queryhbase.util.LoadTimeTask;
 import com.asiainfo.queryhbase.util.MysqlJdbcProcess;
@@ -23,40 +21,30 @@ public class MainApp {
 	public static void main(String[] args) {
 
 		System.out.println("开始初始化，请等待...");
-		
+
 		// 读取配置文件，默认为当前目录下，也可以使用运行参数配置
-		String propertiesPath = "./QuerySrv.properties";
+		String appContextPath = "./applicationContext.xml";
 		if (args.length > 0) {
-			propertiesPath = args[0];
-		}
-		Properties properties = new Properties();
-		FileInputStream inputFile;
-		try {	
-			inputFile = new FileInputStream(propertiesPath);
-			properties.load(inputFile);
-			inputFile.close();
-		} catch (FileNotFoundException e) {
-			System.out.println("\n错误:找不到配置文件\n Exception:" + e.getMessage());
-			return;
-		} catch (IOException e) {
-			System.out.println("\n错误:配置文件读取失败\n Exception:" + e.getMessage());
-			return;
+			appContextPath = args[0];
 		}
 
-		// Constant 固定参数，持有编码、数据库配置和接口逻辑的配置以及配置载入逻辑
+		// 初始化
+		FileSystemXmlApplicationContext appContext = new FileSystemXmlApplicationContext(appContextPath);
+		Constant con = (Constant) appContext.getBean("property");
 		try {
-			Constant.initData(properties);
-			Constant.initLog(properties);
-			Constant.initDB(properties);
-			Constant.initHBase(properties);
-		} catch (Exception e) {
+			con.initData();
+			con.initLog();
+			con.initDB();
+			con.initHBase();
+		} catch (IOException e) {
 			System.out.println("错误:初始化固定参数失败");
 			e.printStackTrace();
-			return;
+			appContext.close();
+			return ;
 		} finally {
 			MysqlJdbcProcess.closeConnection();
 		}
-
+		ServerHanlder.setAppContext(appContext);
 		LoadTimeTask.LoadTask();
 
 		System.out.println("初始化结束，允许查询");

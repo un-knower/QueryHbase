@@ -18,6 +18,7 @@ public abstract class ServiceBridge  {
 	
 	protected static final Logger logger = LoggerFactory.getLogger(ServiceBridge.class); 
 	protected static final Logger logger_stati = LoggerFactory.getLogger("statistics"); 
+	protected String name = null;
 	protected Record record = null;
 	protected String rspCommand = null;
 	
@@ -154,5 +155,24 @@ public abstract class ServiceBridge  {
     	session.setAttribute("position", position+"");
         session.setAttribute("sumSubBagBlankTime", "0");
     }
+	
+	public String getName() {
+		return name;
+	}
+	public void setName(String name) {
+		this.name = name;
+	}
+	public Record getRecord() {
+		return record;
+	}
+	public void setRecord(Record record) {
+		this.record = record;
+	}
+	public String getRspCommand() {
+		return rspCommand;
+	}
+	public void setRspCommand(String rspCommand) {
+		this.rspCommand = rspCommand;
+	}
 
 }
